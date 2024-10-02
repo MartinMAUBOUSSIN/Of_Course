@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendrier d'Évaluations</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .calendar-navigation {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .evaluation {
+            color: white;
+        }
+        .green {
+            background-color: green;
+        }
+        .orange {
+            background-color: orange;
+        }
+        .red {
+            background-color: red;
+        }
+        .black {
+            background-color: black;
+        }
+        .ds {
+            background-color: blue;
+        }
+        .legend {
+            margin-bottom: 20px;
+        }
+        .legend div {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        .color-box {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        form {
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            max-width: 500px;
+            margin: auto;
+            display: none;
+        }
+        form input, form select, form button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+        }
+        .hidden {
+            display: none;
+        }
+        .italic {
+            font-style: italic;
+        }
+        .login-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .login-section input {
+            width: 300px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calendrier des Évaluations</h1>
+
+    <div class="calendar-navigation">
+        <button id="prev-week">Semaine précédente</button>
+        <span id="current-week">Semaine du <span id="week-start"></span> au <span id="week-end"></span></span>
+        <button id="next-week">Semaine suivante</button>
+    </div>
+
+    <div class="legend">
+        <div><span class="color-box green"></span> 0 évaluation (Vert)</div>
+        <div><span class="color-box orange"></span> 1 évaluation (Orange)</div>
+        <div><span class="color-box red"></span> 2 évaluations (Rouge)</div>
+        <div><span class="color-box black"></span> Plus de 2 évaluations (Noir)</div>
+        <div><span class="italic">* Devoirs importants seront affichés en italique</span></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Matière</th>
+                <th id="date1"></th>
+                <th id="date2"></th>
+                <th id="date3"></th>
+                <th id="date4"></th>
+                <th id="date5"></th>
+            </tr>
+        </thead>
+        <tbody id="calendar-body">
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>État de la journée</th>
+                <td id="etat1"></td>
+                <td id="etat2"></td>
+                <td id="etat3"></td>
+                <td id="etat4"></td>
+                <td id="etat5"></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <form id="evaluation-form" class="hidden">
+        <input type="date" id="evaluation-date" required>
+        <select id="subject" required>
+            <option value="" disabled selected>Choisir une matière</option>
+            <option value="Math">Math</option>
+            <option value="E.S Physiques">E.S Physiques</option>
+            <option value="LVA">LVA</option>
+            <option value="LVB">LVB</option>
+            <option value="Spé Math">Spé Math</option>
+            <option value="Spé HLP">Spé HLP</option>
+            <option value="Spé HGGSP">Spé HGGSP</option>
+            <option value="Spé S.E.S">Spé S.E.S</option>
+            <option value="Spé S.V.T">Spé S.V.T</option>
+            <option value="Spé Physique-Chimie">Spé Physique-Chimie</option>
+            <option value="Français">Français</option>
+            <option value="H.G.E.M.C">H.G.E.M.C</option>
+            <option value="E.S S.V.T">E.S S.V.T</option>
+            <option value="Latin">Latin</option>
+            <option value="E.P.S">E.P.S</option>
+        </select>
+        <select id="evaluation-type" required>
+            <option value="evaluation">Évaluation</option>
+            <option value="devoir-important">Devoir Important</option>
+        </select>
+        <button type="submit">Ajouter</button>
+    </form>
+
+    <div class="login-section">
+        <input type="password" id="login-code" placeholder="Code de connexion" required>
+        <button id="login-button">Se connecter</button>
+    </div>
+
+    <script>
+        const loginSection = document.querySelector('.login-section');
+        const evaluationForm = document.getElementById('evaluation-form');
+        const loginCode = document.getElementById('login-code');
+        const loginButton = document.getElementById('login-button');
+        const userRole = { type: '' };
+
+        loginSection.style.display = 'block';
+
+        loginButton.addEventListener('click', function() {
+            const code = loginCode.value;
+
+            if (code === 'elstmapr1') {
+                alert('Bienvenue Élève');
+                userRole.type = 'eleve';
+            } else if (code === 'delegstmapr1') {
+                alert('Bienvenue Délégué');
+                userRole.type = 'delegue';
+                evaluationForm.style.display = 'block';
+            } else if (code === 'profstmapr1') {
+                alert('Bienvenue Professeur');
+                userRole.type = 'prof';
+                evaluationForm.style.display = 'block';
+            } else {
+                alert('Code incorrect');
+                return;
+            }
+
+            loginSection.style.display = 'none';
+        });
+
+        let currentDate = new Date();
+
+        function getMonday(date) {
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(date.setDate(diff));
+        }
+
+        function formatDateFr(date) {
+            return date.toLocaleDateString('fr-FR');
+        }
+
+        function getWeekKey() {
+            const monday = getMonday(new Date(currentDate));
+            const weekStart = monday.toISOString().split('T')[0]; // Date au format YYYY-MM-DD
+            return `semaine_${weekStart}`; // Clé unique par semaine
+        }
+
+        function renderCalendar() {
+            const monday = getMonday(new Date(currentDate));
+            const dates = [monday];
+
+            for (let i = 1; i < 5; i++) {
+                const nextDate = new Date(monday);
+                nextDate.setDate(monday.getDate() + i);
+                dates.push(nextDate);
+            }
+
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`date${i + 1}`).textContent = formatDateFr(dates[i]);
+            }
+
+            const subjects = ['Math', 'E.S Physiques', 'LVA', 'LVB', 'Spé Math', 'Spé HLP', 'Spé HGGSP', 'Spé S.E.S', 'Spé S.V.T', 'Spé Physique-Chimie', 'Français', 'H.G.E.M.C', 'E.S S.V.T', 'Latin', 'E.P.S'];
+            const calendarBody = document.getElementById('calendar-body');
+            calendarBody.innerHTML = ''; // Réinitialiser le corps du calendrier
+
+            subjects.forEach(subject => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${subject}</td><td id="cell-${subject}-1"></td><td id="cell-${subject}-2"></td><td id="cell-${subject}-3"></td><td id="cell-${subject}-4"></td><td id="cell-${subject}-5"></td>`;
+                calendarBody.appendChild(row);
+                loadEvaluations(subject);
+            });
+
+            const weekStartDate = new Date(monday);
+            const weekEndDate = new Date(monday);
+            weekEndDate.setDate(weekEndDate.getDate() + 4);
+
+            document.getElementById('week-start').textContent = formatDateFr(weekStartDate);
+            document.getElementById('week-end').textContent = formatDateFr(weekEndDate);
+            updateDailyState(); // Mise à jour de l'état de la journée après le rendu du calendrier
+        }
+
+        function updateCell(subject, dateIndex, evaluationType) {
+            const cell = document.getElementById(`cell-${subject}-${dateIndex}`);
+            const evaluationsKey = getWeekKey();
+            const evaluations = JSON.parse(localStorage.getItem(`${evaluationsKey}_${subject}`)) || {};
+
+            if (evaluationType === 'devoir-important') {
+                evaluations[dateIndex] = evaluations[dateIndex] ? evaluations[dateIndex] + ', Devoir Important' : 'Devoir Important';
+                cell.classList.add('italic'); // Appliquer italique pour devoirs importants
+            } else {
+                evaluations[dateIndex] = evaluations[dateIndex] ? evaluations[dateIndex] + ', Évaluation' : 'Évaluation';
+            }
+
+            localStorage.setItem(`${evaluationsKey}_${subject}`, JSON.stringify(evaluations));
+            cell.textContent = evaluations[dateIndex];
+            cell.className = 'evaluation';
+            updateCellColor(subject);
+            updateDailyState(); // Mise à jour de l'état de la journée après l'ajout d'une évaluation
+        }
+
+        function loadEvaluations(subject) {
+            const evaluationsKey = getWeekKey();
+            const evaluations = JSON.parse(localStorage.getItem(`${evaluationsKey}_${subject}`)) || {};
+            for (let i = 1; i <= 5; i++) {
+                const cell = document.getElementById(`cell-${subject}-${i}`);
+                if (evaluations[i]) {
+                    cell.textContent = evaluations[i];
+                    cell.className = 'evaluation';
+                    updateCellColor(subject);
+                }
+            }
+        }
+
+        function updateCellColor(subject) {
+            for (let i = 1; i <= 5; i++) {
+                const cell = document.getElementById(`cell-${subject}-${i}`);
+                const evaluationsKey = getWeekKey();
+                const evaluations = JSON.parse(localStorage.getItem(`${evaluationsKey}_${subject}`)) || {};
+                const evalCount = evaluations[i] ? evaluations[i].split(',').length : 0;
+
+                cell.classList.remove('green', 'orange', 'red', 'black');
+                
+                if (evalCount === 0) {
+                    cell.classList.add('green');
+                } else if (evalCount === 1) {
+                    cell.classList.add('orange');
+                } else if (evalCount === 2) {
+                    cell.classList.add('red');
+                } else if (evalCount > 2) {
+                    cell.classList.add('black');
+                }
+            }
+        }
+
+        function updateDailyState() {
+            const states = document.querySelectorAll('#calendar-body tr');
+            for (let i = 0; i < 5; i++) {
+                let totalEvaluations = 0;
+                states.forEach(row => {
+                    const cell = row.cells[i + 1];
+                    const evaluationsKey = getWeekKey();
+                    const evaluations = JSON.parse(localStorage.getItem(`${evaluationsKey}_${cell.parentNode.firstChild.textContent}`)) || {};
+                    const evalCount = evaluations[i + 1] ? evaluations[i + 1].split(',').length : 0;
+                    totalEvaluations += evalCount;
+                });
+                const stateCell = document.getElementById(`etat${i + 1}`);
+                stateCell.className = ''; // Réinitialiser la classe
+                if (totalEvaluations === 0) {
+                    stateCell.classList.add('green');
+                } else if (totalEvaluations === 1) {
+                    stateCell.classList.add('orange');
+                } else if (totalEvaluations === 2) {
+                    stateCell.classList.add('red');
+                } else {
+                    stateCell.classList.add('black');
+                }
+            }
+        }
+
+        evaluationForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const dateValue = new Date(document.getElementById('evaluation-date').value);
+            const subject = document.getElementById('subject').value;
+            const evaluationType = document.getElementById('evaluation-type').value;
+
+            const dayIndex = (dateValue.getDay() + 6) % 7;
+
+            const monday = getMonday(currentDate);
+            const dateInWeek = new Date(monday);
+            dateInWeek.setDate(monday.getDate() + 6); // Dimanche de la semaine actuelle
+
+            if (dateValue.getTime() < monday.getTime() || dateValue.getTime() > dateInWeek.getTime()) {
+                alert("Veuillez choisir une date valide pour cette semaine.");
+                return;
+            }
+
+            updateCell(subject, dayIndex + 1, evaluationType);
+            evaluationForm.reset();
+        });
+
+        document.getElementById('prev-week').addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() - 7);
+            renderCalendar();
+        });
+
+        document.getElementById('next-week').addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() + 7);
+            renderCalendar();
+        });
+
+        renderCalendar();
+    </script>
+</body>
+</html>
